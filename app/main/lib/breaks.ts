@@ -24,6 +24,17 @@ let lastTick: Date | null = null;
 
 const logger = log.scope("Breaks");
 
+export function getStatus() {
+  return {
+    breakTime,
+    havingBreak,
+    postponedCount,
+    idleStart,
+    lockStart,
+    lastTick,
+  };
+}
+
 export function getBreakTime(): BreakTime {
   logger.silly("Retrieving break time", { breakTime });
   return breakTime;
@@ -80,10 +91,10 @@ function createIdleNotification() {
 
   if (settings.idleResetNotification) {
     logger.info("Showing idle notification", {
-      idleStart,
       idleHours,
       idleMinutes,
       idleSeconds,
+      ...getStatus(),
     });
 
     showNotification(
@@ -96,7 +107,7 @@ function createIdleNotification() {
 }
 
 export function createBreak(isPostpone = false): void {
-  logger.info("Creating a break", { isPostpone });
+  logger.info("Creating a break", { isPostpone, ...getStatus() });
   const settings: Settings = getSettings();
 
   if (idleStart) {
@@ -114,7 +125,7 @@ export function createBreak(isPostpone = false): void {
     .add(freq.getMinutes(), "minutes")
     .add(freq.getSeconds(), "seconds");
 
-  logger.info(`Next break time is ${breakTime}`);
+  logger.info(`Next break time is ${breakTime}`, { ...getStatus() });
 
   buildTray();
 }
@@ -122,9 +133,7 @@ export function createBreak(isPostpone = false): void {
 export function endPopupBreak(): void {
   if (breakTime !== null && breakTime < moment()) {
     logger.info("Ending popup break", {
-      breakTime,
-      havingBreak,
-      postponedCount,
+      ...getStatus(),
     });
     breakTime = null;
     havingBreak = false;
@@ -143,13 +152,13 @@ export function getAllowPostpone(): boolean {
 
 export function postponeBreak(): void {
   postponedCount++;
-  logger.info("Postponing break", { postponedCount });
+  logger.info("Postponing break", { ...getStatus() });
   havingBreak = false;
   createBreak(true);
 }
 
 function doBreak(): void {
-  logger.info("Starting break now");
+  logger.info("Starting break now", { ...getStatus() });
   havingBreak = true;
 
   const settings: Settings = getSettings();
@@ -230,7 +239,7 @@ export function checkIdle(): boolean {
 
   if (state === IdleState.Locked) {
     if (!lockStart) {
-      logger.info(`Screen is now locked`);
+      logger.info(`Screen is now locked`, { ...getStatus() });
       lockStart = new Date();
       return false;
     } else {
@@ -275,7 +284,7 @@ function checkBreak(): void {
 }
 
 export function startBreakNow(): void {
-  logger.info("Starting break now");
+  logger.info("Starting break now", { ...getStatus() });
   breakTime = moment();
 }
 
@@ -292,18 +301,28 @@ function tick(): void {
       : 0;
     const breakSeconds = getBreakSeconds();
     const lockSeconds = lockStart && Math.abs(+new Date() - +lockStart) / 1000;
+    const idleResetSeconds = getIdleResetSeconds();
 
     logger.silly("Checking if computer has been asleep", {
       secondsSinceLastTick,
       breakSeconds,
       lockSeconds,
+      idleResetSeconds,
+      ...getStatus(),
     });
     if (lockStart && lockSeconds !== null && lockSeconds > breakSeconds) {
       // The computer has been locked for longer than the break period. In this
       // case, it's not particularly helpful to show an idle reset
       // notification, so unset idle start
       logger.info(
-        "Computer has been locked longer than break period, resetting idle start"
+        "Computer has been locked longer than break period, resetting idle start",
+        {
+          secondsSinceLastTick,
+          breakSeconds,
+          lockSeconds,
+          idleResetSeconds,
+          ...getStatus(),
+        }
       );
       idleStart = null;
       lockStart = null;
@@ -312,19 +331,33 @@ function tick(): void {
       // case, it's not particularly helpful to show an idle reset
       // notification, so just reset the break
       logger.info(
-        "Ticks have not run for longer than the break period, removing next break"
+        "Ticks have not run for longer than the break period, removing next break",
+        {
+          secondsSinceLastTick,
+          breakSeconds,
+          lockSeconds,
+          idleResetSeconds,
+          ...getStatus(),
+        }
       );
       lockStart = null;
       breakTime = null;
-    } else if (secondsSinceLastTick > getIdleResetSeconds()) {
+    } else if (secondsSinceLastTick > idleResetSeconds) {
       //  If idleStart exists, it means we were idle before the computer slept.
       //  If it doesn't exist, count the computer going unresponsive as the
       //  start of the idle period.
       logger.info(
-        "Ticks have not run for longer than idle reset period, resetting next break"
+        "Ticks have not run for longer than idle reset period, resetting next break",
+        {
+          secondsSinceLastTick,
+          breakSeconds,
+          lockSeconds,
+          idleResetSeconds,
+          ...getStatus(),
+        }
       );
       if (!idleStart) {
-        logger.info("Setting idle start to last tick");
+        logger.info("Setting idle start to last tick", { ...getStatus() });
         lockStart = null;
         idleStart = lastTick;
       }
@@ -333,10 +366,10 @@ function tick(): void {
 
     if (!shouldHaveBreak && !havingBreak && breakTime) {
       if (checkIdle()) {
-        logger.info(`User is now idle`);
+        logger.info(`User is now idle`, { ...getStatus() });
         idleStart = new Date();
       }
-      logger.info(`Clearing next break time`);
+      logger.info(`Clearing next break time`, { ...getStatus() });
       breakTime = null;
       buildTray();
       return;
@@ -361,7 +394,7 @@ function tick(): void {
 let tickInterval: NodeJS.Timeout;
 
 export function initBreaks(): void {
-  logger.info("Initializing breaks");
+  logger.info("Initializing breaks", { ...getStatus() });
 
   const settings: Settings = getSettings();
 
@@ -377,17 +410,17 @@ export function initBreaks(): void {
 }
 
 powerMonitor.addListener("suspend", () => {
-  logger.info("System is suspending");
+  logger.info("System is suspending", { ...getStatus() });
 });
 
 powerMonitor.addListener("resume", () => {
-  logger.info("System is resuming");
+  logger.info("System is resuming", { ...getStatus() });
 });
 
 powerMonitor.addListener("lock-screen", () => {
-  logger.info("Screen is being locked");
+  logger.info("Screen is being locked", { ...getStatus() });
 });
 
 powerMonitor.addListener("unlock-screen", () => {
-  logger.info("Screen is being unlocked");
+  logger.info("Screen is being unlocked", { ...getStatus() });
 });

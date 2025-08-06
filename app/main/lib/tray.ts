@@ -10,6 +10,7 @@ import {
   getBreakTime,
   checkIdle,
   startBreakNow,
+  getStatus,
 } from "./breaks";
 import {
   getDisableEndTime,
@@ -62,7 +63,7 @@ function getDisableTimeRemaining(): string {
 }
 
 export function buildTray(): void {
-  logger.debug("Rebuilding tray");
+  logger.debug("Rebuilding tray", { ...getStatus() });
   if (!tray) {
     let imgPath;
 
