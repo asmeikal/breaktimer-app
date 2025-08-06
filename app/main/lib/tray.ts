@@ -1,22 +1,25 @@
 import { app, dialog, Menu, Tray } from "electron";
+import log from "electron-log";
 import moment from "moment";
 import path from "path";
 import packageJson from "../../../package.json";
 import { Settings } from "../../types/settings";
 import {
-    checkIdle,
-    checkInWorkingHours,
-    createBreak,
-    getBreakTime,
-    startBreakNow
+  checkInWorkingHours,
+  createBreak,
+  getBreakTime,
+  checkIdle,
+  startBreakNow,
 } from "./breaks";
 import {
-    getDisableEndTime,
-    getSettings,
-    setDisableEndTime,
-    setSettings
+  getDisableEndTime,
+  getSettings,
+  setDisableEndTime,
+  setSettings,
 } from "./store";
 import { createSettingsWindow } from "./windows";
+
+const logger = log.scope("Tray");
 
 let tray: Tray;
 let lastMinsLeft = 0;
@@ -59,22 +62,23 @@ function getDisableTimeRemaining(): string {
 }
 
 export function buildTray(): void {
-    if (!tray) {
-      let imgPath;
+  logger.debug("Rebuilding tray");
+  if (!tray) {
+    let imgPath;
 
-      if (process.platform === "darwin") {
-        imgPath =
-          process.env.NODE_ENV === "development"
-            ? "resources/tray/tray-IconTemplate.png"
-            : path.join(resourcesPath, "tray", "tray-IconTemplate.png");
-      } else {
-        imgPath =
-          process.env.NODE_ENV === "development"
-            ? "resources/tray/icon.png"
-            : path.join(app.getAppPath(), "..", "tray", "icon.png");
-      }
+    if (process.platform === "darwin") {
+      imgPath =
+        process.env.NODE_ENV === "development"
+          ? "resources/tray/tray-IconTemplate.png"
+          : path.join(resourcesPath, "tray", "tray-IconTemplate.png");
+    } else {
+      imgPath =
+        process.env.NODE_ENV === "development"
+          ? "resources/tray/icon.png"
+          : path.join(app.getAppPath(), "..", "tray", "icon.png");
+    }
 
-      tray = new Tray(imgPath);
+    tray = new Tray(imgPath);
 
     // On windows, context menu will not show on left click by default
     if (process.platform === "win32") {
@@ -211,6 +215,7 @@ export function buildTray(): void {
 }
 
 export function initTray(): void {
+  logger.info("Initializing tray");
   buildTray();
   let lastDisableText = getDisableTimeRemaining();
 

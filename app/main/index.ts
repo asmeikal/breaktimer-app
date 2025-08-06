@@ -13,6 +13,8 @@ import { createSettingsWindow, createSoundsWindow } from "./lib/windows";
 
 const gotTheLock = app.requestSingleInstanceLock();
 
+log.transports.console.level = 'debug';
+
 app.on("second-instance", () => {
   createSettingsWindow();
 });

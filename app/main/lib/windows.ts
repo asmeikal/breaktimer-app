@@ -4,6 +4,8 @@ import path from "path";
 import { endPopupBreak } from "./breaks";
 import { getSettings } from "./store";
 
+const logger = log.scope("Windows");
+
 let settingsWindow: BrowserWindow | null = null;
 let soundsWindow: BrowserWindow | null = null;
 let breakWindows: BrowserWindow[] = [];
@@ -78,6 +80,7 @@ export function createSoundsWindow(): void {
 }
 
 export function createBreakWindows(): void {
+  logger.info('Creating break window');
   const settings = getSettings();
 
   const displays = screen.getAllDisplays();
@@ -129,6 +132,7 @@ export function createBreakWindows(): void {
     });
 
     breakWindow.on("closed", () => {
+      logger.info("Closing break window");
       if (process.platform === "darwin") {
         // Ensure that focus is returned to the previous app when break windows
         // close.
@@ -140,7 +144,7 @@ export function createBreakWindows(): void {
           try {
             win.close();
           } catch (err) {
-            log.warn(err);
+            logger.warn(err);
           }
         }
       }

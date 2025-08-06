@@ -6,10 +6,12 @@ import { getAllowPostpone, getBreakLength, postponeBreak } from "./breaks";
 import { getSettings, setSettings } from "./store";
 import { getWindows } from "./windows";
 
+const logger = log.scope("IPC");
+
 export function sendIpc(channel: IpcChannel, ...args: unknown[]): void {
   const windows: BrowserWindow[] = getWindows();
 
-  log.info(`Send event ${channel}`, args);
+  logger.info(`Send event ${channel}`, args);
 
   for (const window of windows) {
     if (!window) {
@@ -21,19 +23,19 @@ export function sendIpc(channel: IpcChannel, ...args: unknown[]): void {
 }
 
 ipcMain.handle(IpcChannel.AllowPostponeGet, (): boolean => {
-  log.info(IpcChannel.AllowPostponeGet);
+  logger.info(IpcChannel.AllowPostponeGet);
   return getAllowPostpone();
 });
 
 ipcMain.handle(IpcChannel.BreakPostpone, (): void => {
-  log.info(IpcChannel.BreakPostpone);
+  logger.info(IpcChannel.BreakPostpone);
   postponeBreak();
 });
 
 ipcMain.handle(
   IpcChannel.SoundStartPlay,
   (_event: IpcMainInvokeEvent, type: SoundType): void => {
-    log.info(IpcChannel.SoundStartPlay);
+    logger.info(IpcChannel.SoundStartPlay);
     sendIpc(IpcChannel.SoundStartPlay, type);
   }
 );
@@ -41,25 +43,25 @@ ipcMain.handle(
 ipcMain.handle(
   IpcChannel.SoundEndPlay,
   (_event: IpcMainInvokeEvent, type: SoundType): void => {
-    log.info(IpcChannel.SoundEndPlay);
+    logger.info(IpcChannel.SoundEndPlay);
     sendIpc(IpcChannel.SoundEndPlay, type);
   }
 );
 
 ipcMain.handle(IpcChannel.SettingsGet, (): Settings => {
-  log.info(IpcChannel.SettingsGet);
+  logger.info(IpcChannel.SettingsGet);
   return getSettings();
 });
 
 ipcMain.handle(
   IpcChannel.SettingsSet,
   (_event: IpcMainInvokeEvent, settings: Settings): void => {
-    log.info(IpcChannel.SettingsSet);
+    logger.info(IpcChannel.SettingsSet);
     setSettings(settings);
   }
 );
 
 ipcMain.handle(IpcChannel.BreakLengthGet, (): Date => {
-  log.info(IpcChannel.BreakLengthGet);
+  logger.info(IpcChannel.BreakLengthGet);
   return getBreakLength();
 });

@@ -233,7 +233,15 @@
     "source-map-support": "^0.5.9"
   },
   "devEngines": {
-    "node": ">=12.x",
-    "npm": ">=4.x"
+    "runtime": {
+      "name": "node",
+      "version": ">=12.x",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": ">=4.x",
+      "onFail": "error"
+    }
   }
 }

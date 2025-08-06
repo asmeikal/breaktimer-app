@@ -1,5 +1,8 @@
+import log from 'electron-log';
 import path from "path";
 import { Notification, Event } from "electron";
+
+const logger = log.scope("Notifications");
 
 export function showNotification(
   title: string,
@@ -7,6 +10,7 @@ export function showNotification(
   onClick?: (e: Event) => void,
   forceClose = true
 ): void {
+  logger.debug('Showing notification', { title, body });
   let imgPath;
   if (process.platform !== "darwin") {
     imgPath =
